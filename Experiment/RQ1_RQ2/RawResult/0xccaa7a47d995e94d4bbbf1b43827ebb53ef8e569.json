@@ -1,0 +1,32 @@
+[
+  {
+    "contract": "Crowdsale",
+    "function": "finalize",
+    "explanation": "Function finalize() does not call finalization() as required by comment.",
+    "violated_comment": "@dev Must be called after crowdsale ends, to do some extra finalization work. Calls the contract's finalization function.",
+    "contract_code": "\n=== Implementation of Function finalize() ===\nnt _value, uint _percent) internal pure returns (uint amount)    {\r\n        uint _amount = _value.mul(_percent).div(10000);\r\n        return (_amount);\r\n    }\r\n\r\n\r\n    function setBuyerRefPercent(uint _buyerRefPe\n    \n=== Functions that function finalize internally calls ===\nmodifier onlyOwner() {\r\n        require(isOwner(msg.sender));\r\n        _;\r\n    }\nunction setMinWithdrawValue(uint _minWithdrawValue) onlyOwner public {\r\n        minWithdrawValue = _minWithdrawValue;\r\n    }\r\n\r\n    function setGlobalMinWithd",
+    "rewritten_code": {
+      "finalize": "function finalize() onlyOwner public {\n    require(!isFinalized);\n    finalization();\n    isFinalized = true;\n}"
+    }
+  },
+  {
+    "contract": "Crowdsale",
+    "function": "_forwardFunds",
+    "explanation": "_forwardFunds missing escrow payment implementation specified in comment.",
+    "violated_comment": "@dev Overrides Crowdsale fund forwarding, sending funds to escrow.",
+    "contract_code": "\n=== Implementation of Function _forwardFunds(uint256) ===\nFinalized = true;\r\n    }\r\n\r\n    ",
+    "rewritten_code": {
+      "_forwardFunds": "function _forwardFunds(uint _weiAmount) internal {\n    wallet.transfer(_weiAmount);\n}"
+    }
+  },
+  {
+    "contract": "Crowdsale",
+    "function": "_preValidatePurchase",
+    "explanation": "Missing super call for validation inheritance chain.",
+    "violated_comment": "@dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met. Use super to concatenate validations.",
+    "contract_code": "\n=== Implementation of Function _preValidatePurchase(address,uint256) ===\n[currentStage].minPurchase);\r\n        require(tokensSold < cap);\r\n    }\r\n\r\n\r\n    function _validatePurchase(uint256 _tokens) internal view {\r\n        require(tokensSold.add(_tokens) <= cap);\r\n    }\r\n\r\n\r\n    \n=== Functions that function _preValidatePurchase internally calls ===\ns _wallet, ERC20 _token) public {\r\n        require(_wallet != address(0));\r\n        require(_token != address(0));\r\n\r\n        wallet = _wallet;\r\n        tok",
+    "rewritten_code": {
+      "_preValidatePurchase": "function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal {\n    require(_weiAmount >= stages[currentStage].minPurchase);\n    require(tokensSold < cap);\n}"
+    }
+  }
+]

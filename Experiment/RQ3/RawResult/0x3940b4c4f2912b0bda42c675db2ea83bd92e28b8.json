@@ -1,0 +1,12 @@
+[
+  {
+    "contract": "ECDSA",
+    "function": "toEthSignedMessageHash",
+    "explanation": "Missing EIP-191 message prefix in hash calculation",
+    "violated_comment": "Returns an Ethereum Signed Message, created from a `hash`. This produces a hash corresponding to the one signed with the [`eth_sign`](https://eth.wiki/json-rpc/API#eth_sign) JSON-RPC method as part of EIP-191.",
+    "contract_code": "\n=== Implementation of Function toEthSignedMessageHash(bytes32) ===\nkeccak256(0x04, 0x3c)\r\n        }\r\n    }\r\n\r\n    function toEthSignedMessageHash(bytes memory s) internal pure returns (bytes32 result) {\r\n        assembly {\r\n           \n    ",
+    "rewritten_code": {
+      "toEthSignedMessageHash": "function toEthSignedMessageHash(bytes32 hash) internal pure returns (bytes32) {\n        return keccak256(abi.encodePacked(\"\\x19Ethereum Signed Message:\\n32\", hash));\n    }"
+    }
+  }
+]

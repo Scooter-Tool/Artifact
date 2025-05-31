@@ -1,0 +1,22 @@
+[
+  {
+    "contract": "ERC20Permit",
+    "function": "DOMAIN_SEPARATOR",
+    "explanation": "DOMAIN_SEPARATOR comment states it always rebuilds the domain separator, but implementation uses cached version when possible.",
+    "violated_comment": "This will cause the `_domainSeparatorV4` function to always rebuild the separator from the immutable values",
+    "contract_code": "\n=== Implementation of Function DOMAIN_SEPARATOR() ===\nn DOMAIN_SEPARATOR() external view override returns (bytes32) {\r\n        return _domainSeparatorV4();\r\n    }\r\n\r\n   \n    \n=== Functions that function DOMAIN_SEPARATOR internally calls ===\nn _domainSeparatorV4() internal view returns (bytes32) {\r\n        if (address(this) == _cachedThis && block.chainid == _cachedChainId) {\r\n            return _cachedDomainSeparator;\r\n        } else {\r\n            return _buildDomainSeparator();\r\n        }\r\n    }\r\n\r\n   ",
+    "rewritten_code": {
+      "DOMAIN_SEPARATOR": "function DOMAIN_SEPARATOR() external view override returns (bytes32) {\n    return _domainSeparatorV4();\n}"
+    }
+  },
+  {
+    "contract": "ECDSA",
+    "function": "recover",
+    "explanation": "Missing check for v=27/28 in signature recovery",
+    "violated_comment": "The `ecrecover` EVM opcode allows for malleable (non-unique) signatures: this function rejects them by requiring the `s` value to be in the lower half order, and the `v` value to be either 27 or 28.",
+    "contract_code": "\n=== Implementation of Function recover(bytes32,uint8,bytes32,bytes32) ===\nn recover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {\r\n        (address recovered, RecoverError error) = tryRecover(hash, v, r, s);\r\n        _throwError(error);\r\n        return recovered;\r\n    }\r\n\r\n   \n    \n=== Functions that function recover internally calls ===\ntion _throwError(RecoverError error) private pure {\r\n        if (error == RecoverError.NoError) {\r\n            return; // no error: do nothing\r\n        } else if (error == RecoverError.InvalidSignature) {\r\n            revert(\"ECDSA: invalid signature\");\r\n        } else if (error == RecoverError.InvalidSignatureLength) {\r\n            revert(\"ECDSA: invalid signature length\");\r\n        } else if (error == RecoverError.InvalidSignatureS) {\r\n            revert(\"ECDSA: invalid signature 's' value\");\r\n        }\r\n    }\r\n\r\n\ntion tryRecover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address, RecoverError) {\r\n        if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {\r\n            return (address(0), RecoverError.InvalidSignatureS);\r\n        }\r\n\r\n        address signer = ecrecover(hash, v, r, s);\r\n        if (signer == address(0)) {\r\n            return (address(0), RecoverError.InvalidSignature);\r\n        }\r\n\r\n        return (signer, RecoverError.NoError);\r\n    }\r\n\r\n   ",
+    "rewritten_code": {
+      "recover(bytes32,uint8,bytes32,bytes32)": "function recover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {\n    require(v == 27 || v == 28, \"ECDSA: invalid v value\");\n    (address recovered, RecoverError error) = tryRecover(hash, v, r, s);\n    _throwError(error);\n    return recovered;\n}"
+    }
+  }
+]

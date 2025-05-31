@@ -1,0 +1,32 @@
+[
+  {
+    "contract": "BookCoin721",
+    "function": "preGroupOneRoot",
+    "explanation": "Function returns presale root instead of group one root",
+    "violated_comment": "Provides the root being used for group one approved minter list",
+    "contract_code": "\n=== Implementation of Function preGroupOneRoot() ===\nnction preGroupOneRoot() public view returns (bytes32) {\r\n        return _rootPreSale;\r\n    }\r\n\n    ",
+    "rewritten_code": {
+      "preGroupOneRoot": "function preGroupOneRoot() public view returns (bytes32) {\n        return _rootGroup1;\n    }"
+    }
+  },
+  {
+    "contract": "BookCoin721",
+    "function": "mint",
+    "explanation": "Public mint phase bypasses Merkle proof check, allowing unauthorized mints.",
+    "violated_comment": "only the address on the merkle tree can mint, no others - means tree can be public",
+    "contract_code": "\n=== Implementation of Function mint(bytes32[]) ===\nnction mint(bytes32[] calldata proof) external payable {\r\n        address account = _msgSender();\r\n        require(\r\n            msg.value >= mintPrice,\r\n            \"Ether value sent lower than mint price\"\r\n        );\r\n        require(_verify(_leaf(account), proof), \"Invalid merkle proof\");\r\n        require(_withinMintLimit(account, 1), \"Already Minted\");\r\n        _mintOne(account);\r\n    }\r\n\n    \n=== Functions that function mint internally calls ===\nfunction _msgSender() internal view virtual returns (address) {\n        return msg.sender;\n    }\nnction _leaf(address account) internal pure returns (bytes32) {\r\n        return keccak256(abi.encodePacked(account));\r\n    }\r\n\nnction _mintOne(address account) internal {\r\n        require(\r\n            _nextTokenId.current() <= supplyLimit,\r\n            \"Cannot mint beyond supply limit\"\r\n        );\r\n        _safeMint(account, _nextTokenId.current());\r\n        _nextTokenId.increment();\r\n        mintNum[account]++;\r\n    }\r\n\nnction _verify(bytes32 leaf, bytes32[] memory proof)\r\n        internal\r\n        view\r\n        returns (bool)\r\n    {\r\n        bool presale = false;\r\n        bool groupone = false;\r\n        bool grouptwo = false;\r\n        uint256 currentBlockTime = block.timestamp;\r\n        if (currentBlockTime > _publicMintStartTime) {\r\n            return true;\r\n        }\r\n\r\n        if (currentBlockTime > _groupTwoStartTime) {\r\n            grouptwo = MerkleProof.verify(proof, _rootGroup2, leaf);\r\n        }\r\n\r\n        if (currentBlockTime > _groupOneStartTime) {\r\n            groupone = MerkleProof.verify(proof, _rootGroup1, leaf);\r\n        }\r\n\r\n        if (currentBlockTime > _preSaleStartTime) {\r\n            presale = MerkleProof.verify(proof, _rootPreSale, leaf);\r\n        }\r\n\r\n        return (presale || groupone || grouptwo);\r\n    }\r\n\nnction _withinMintLimit(address account, uint16 mintCount)\r\n        internal\r\n        view\r\n        returns (bool)\r\n    {\r\n        uint16 num = mintNum[account];\r\n        if (block.timestamp <= mintLimitSwitchTime) {\r\n            require(\r\n                num + mintCount <= firstMintLimit,\r\n                \"Attempting to mint past limit\"\r\n            );\r\n        } else {\r\n            require(\r\n                num + mintCount <= secondMintLimit,\r\n                \"Attempting to mint past limit\"\r\n            );\r\n        }\r\n        return true;\r\n    }\r\n",
+    "rewritten_code": {
+      "mint": "function mint(bytes32[] calldata proof) external payable {\n        address account = _msgSender();\n        require(msg.value >= mintPrice, \"Ether value sent lower than mint price\");\n        require(block.timestamp <= _publicMintStartTime, \"Public mint not active\");\n        require(_verify(_leaf(account), proof), \"Invalid merkle proof\");\n        require(_withinMintLimit(account, 1), \"Already Minted\");\n        _mintOne(account);\n    }"
+    }
+  },
+  {
+    "contract": "BookCoin721",
+    "function": "preGroupTwoRoot",
+    "explanation": "Function returns pre-sale root instead of group two root",
+    "violated_comment": "Provides the root being used for group two approved minter list",
+    "contract_code": "\n=== Implementation of Function preGroupTwoRoot() ===\nnction preGroupTwoRoot() public view returns (bytes32) {\r\n        return _rootPreSale;\r\n    }\r\n\n    ",
+    "rewritten_code": {
+      "function_name": "function preGroupTwoRoot() public view returns (bytes32) {\n        return _rootGroup2;\n    }"
+    }
+  }
+]

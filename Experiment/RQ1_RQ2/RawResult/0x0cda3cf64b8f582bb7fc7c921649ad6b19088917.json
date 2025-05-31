@@ -1,0 +1,22 @@
+[
+  {
+    "contract": "MerkleProof",
+    "function": "processProof",
+    "explanation": "Code sorts proof elements but comment assumes pre-sorted pairs, causing hash order mismatch.",
+    "violated_comment": "When processing the proof, the pairs of leafs & pre-images are assumed to be sorted.",
+    "contract_code": "\n=== Implementation of Function processProof(bytes32[],bytes32) ===\nfunction processProof(bytes32[] memory proof, bytes32 leaf) internal pure returns (bytes32) {\n        bytes32 computedHash = leaf;\n        for (uint256 i = 0; i < proof.length; i++) {\n            bytes32 proofElement = proof[i];\n            if (computedHash <= proofElement) {\n                computedHash = _efficientHash(computedHash, proofElement);\n            } else {\n                computedHash = _efficientHash(proofElement, computedHash);\n            }\n        }\n        return computedHash;\n    }\n    \n=== Functions that function processProof internally calls ===\nfunction _efficientHash(bytes32 a, bytes32 b) private pure returns (bytes32 value) {\n        assembly {\n            mstore(0x00, a)\n            mstore(0x20, b)\n            value := keccak256(0x00, 0x40)\n        }\n    }",
+    "rewritten_code": {
+      "processProof": "function processProof(bytes32[] memory proof, bytes32 leaf) internal pure returns (bytes32) {\n        bytes32 computedHash = leaf;\n        for (uint256 i = 0; i < proof.length; i++) {\n            computedHash = _efficientHash(computedHash, proof[i]);\n        }\n        return computedHash;\n    }"
+    }
+  },
+  {
+    "contract": "MerkleProof",
+    "function": "verify",
+    "explanation": "processProof sorts leaf pairs, but comment states they are pre-sorted.",
+    "violated_comment": "Each pair of leaves and each pair of pre-images are assumed to be sorted.",
+    "contract_code": "\n=== Implementation of Function verify(bytes32[],bytes32,bytes32) ===\nfunction verify(\n        bytes32[] memory proof,\n        bytes32 root,\n        bytes32 leaf\n    ) internal pure returns (bool) {\n        return processProof(proof, leaf) == root;\n    }\n    \n=== Functions that function verify internally calls ===\nfunction processProof(bytes32[] memory proof, bytes32 leaf) internal pure returns (bytes32) {\n        bytes32 computedHash = leaf;\n        for (uint256 i = 0; i < proof.length; i++) {\n            bytes32 proofElement = proof[i];\n            if (computedHash <= proofElement) {\n                computedHash = _efficientHash(computedHash, proofElement);\n            } else {\n                computedHash = _efficientHash(proofElement, computedHash);\n            }\n        }\n        return computedHash;\n    }",
+    "rewritten_code": {
+      "verify(bytes32[],bytes32,bytes32)": "function verify(bytes32[] memory proof, bytes32 root, bytes32 leaf) internal pure returns (bool) {\n    bytes32 computedHash = leaf;\n    for (uint256 i = 0; i < proof.length; i++) {\n        computedHash = _efficientHash(computedHash, proof[i]);\n    }\n    return computedHash == root;\n}"
+    }
+  }
+]

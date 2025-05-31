@@ -1,0 +1,22 @@
+[
+  {
+    "contract": "MTRCToken",
+    "function": "mint",
+    "explanation": "Missing contract check for mint agent",
+    "violated_comment": "Only callably by a crowdsale contract (mint agent).",
+    "contract_code": "\n=== Implementation of Function mint(address,uint256) ===\nfunction mint(address receiver, uint amount) onlyMintAgent canMint public {\r\n    amount *= 10 ** uint(decimals);\r\n    totalSupply = safeAdd(totalSupply, amount);\r\n    balances[receiver] = safeAdd(balances[receiver], amount);\r\n\r\n    Transfer(0, receiver, amount);\r\n  }\n    \n=== Functions that function mint internally calls ===\nfunction safeAdd(uint a, uint b) internal returns (uint) {\r\n    uint c = a + b;\r\n    assert(c>=a && c>=b);\r\n    return c;\r\n  }\nmodifier canMint() {\r\n    if(mintingFinished) revert();\r\n    _;\r\n  }\nmodifier onlyMintAgent() {\r\n    if(!mintAgents[msg.sender]) revert();\r\n    _;\r\n  }",
+    "rewritten_code": {
+      "mint": "function mint(address receiver, uint amount) onlyMintAgent canMint public {\n    require(isContract(msg.sender), 'Mint agent must be a contract');\n    amount *= 10 ** uint(decimals);\n    totalSupply = safeAdd(totalSupply, amount);\n    balances[receiver] = safeAdd(balances[receiver], amount);\n    Transfer(0, receiver, amount);\n}\n\nfunction isContract(address addr) internal view returns (bool) {\n    uint256 size;\n    assembly { size := extcodesize(addr) }\n    return size > 0;\n}"
+    }
+  },
+  {
+    "contract": "UpgradeableToken",
+    "function": "UpgradeableToken",
+    "explanation": "Missing zero-address check for upgrade master during construction.",
+    "violated_comment": "Do not allow construction without upgrade master set.",
+    "contract_code": "\n=== Implementation of Function UpgradeableToken(address) ===\nfunction UpgradeableToken(address _upgradeMaster) public {\r\n    upgradeMaster = _upgradeMaster;\r\n  }\n    ",
+    "rewritten_code": {
+      "UpgradeableToken": "function UpgradeableToken(address _upgradeMaster) public {\n    require(_upgradeMaster != address(0));\n    upgradeMaster = _upgradeMaster;\n  }"
+    }
+  }
+]
